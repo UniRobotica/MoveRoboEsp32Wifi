@@ -6,6 +6,9 @@
   <title>Controle do Robô</title>
   <style>
     button { margin: 10px; padding: 10px; font-size: 18px; }
+    #status { margin-top: 20px; font-size: 18px; }
+    #status.connected { color: green; }
+    #status.disconnected { color: red; }
   </style>
 </head>
 <body>
@@ -16,29 +19,45 @@
   <button onclick="sendCommand('right')">Direita</button>
   <button onclick="sendCommand('stop')">Parar</button>
 
+  <div id="status" class="disconnected">Status: Desconectado</div>
+
   <script>
     let socket;
+    let ip;
 
-    function connectWebSocket(ip) {
+    function connectWebSocket() {
       socket = new WebSocket(`ws://${ip}/`);
 
       socket.onopen = () => {
         console.log("Conectado ao WebSocket!");
+        updateStatus("Conectado", true);
       };
 
       socket.onclose = () => {
         console.log("Desconectado do WebSocket.");
+        updateStatus("Desconectado", false);
+        // Tenta reconectar após 3 segundos
+        setTimeout(connectWebSocket, 3000);
       };
 
       socket.onerror = (error) => {
         console.error("Erro no WebSocket:", error);
+        updateStatus("Erro de conexão", false);
       };
+    }
+
+    // Função para atualizar o status de conexão
+    function updateStatus(statusText, isConnected) {
+      const statusElement = document.getElementById("status");
+      statusElement.textContent = `Status: ${statusText}`;
+      statusElement.className = isConnected ? "connected" : "disconnected";
     }
 
     // Função para enviar comandos
     function sendCommand(command) {
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(command);
+        console.log(`Comando enviado: ${command}`);
       } else {
         console.log("Conexão WebSocket não está aberta.");
       }
@@ -46,9 +65,9 @@
 
     // Solicita o IP ao usuário ao carregar a página
     window.onload = () => {
-      const ip = prompt("Insira o endereço IP do ESP32:");
+      ip = prompt("Insira o endereço IP do ESP32:");
       if (ip) {
-        connectWebSocket(ip);
+        connectWebSocket();
       } else {
         alert("IP não fornecido. A conexão não será estabelecida.");
       }
