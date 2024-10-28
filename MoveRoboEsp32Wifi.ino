@@ -2,8 +2,8 @@
 #include <WebServer.h>
 
 // Configurações de Wi-Fi
-const char* ssid = "Robson5G";
-const char* password = "12345678";
+const char* ssid = "CLARO_2G2701F5";
+const char* password = "752701F5";
 
 // Configuração do servidor web na porta 80
 WebServer server(80);
