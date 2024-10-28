@@ -1,76 +1,58 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Controle do Robô</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-    button { font-size: 20px; margin: 10px; padding: 15px; }
-    #log { margin-top: 20px; height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; text-align: left; }
+    button { margin: 10px; padding: 10px; font-size: 18px; }
   </style>
 </head>
 <body>
-
   <h1>Controle do Robô</h1>
-
-  <div>
-    <button onclick="enviarComando('forward')">Frente</button><br>
-    <button onclick="enviarComando('left')">Esquerda</button>
-    <button onclick="enviarComando('stop')">Parar</button>
-    <button onclick="enviarComando('right')">Direita</button><br>
-    <button onclick="enviarComando('backward')">Trás</button>
-  </div>
-
-  <div id="log"><strong>Log de Conexão:</strong><br></div>
+  <button onclick="sendCommand('forward')">Frente</button>
+  <button onclick="sendCommand('backward')">Trás</button>
+  <button onclick="sendCommand('left')">Esquerda</button>
+  <button onclick="sendCommand('right')">Direita</button>
+  <button onclick="sendCommand('stop')">Parar</button>
 
   <script>
-    const logDiv = document.getElementById('log');
-    let webSocket;
+    let socket;
 
-    // Função para logar mensagens na interface
-    function log(message) {
-      const p = document.createElement('p');
-      p.innerText = message;
-      logDiv.appendChild(p);
-      logDiv.scrollTop = logDiv.scrollHeight;
-    }
+    function connectWebSocket(ip) {
+      socket = new WebSocket(`ws://${ip}/`);
 
-    // Função para conectar ao ESP32 via WebSocket
-    function conectarWebSocket() {
-      const ipESP32 = prompt("Digite o endereço IP do ESP32:");
-      webSocket = new WebSocket(`ws://${ipESP32}/ws`);
-
-      webSocket.onopen = () => {
-        log('Conectado ao ESP32');
+      socket.onopen = () => {
+        console.log("Conectado ao WebSocket!");
       };
 
-      webSocket.onclose = () => {
-        log('Conexão encerrada');
+      socket.onclose = () => {
+        console.log("Desconectado do WebSocket.");
       };
 
-      webSocket.onerror = (error) => {
-        log(`Erro: ${error.message}`);
-      };
-
-      webSocket.onmessage = (event) => {
-        log(`Recebido: ${event.data}`);
+      socket.onerror = (error) => {
+        console.error("Erro no WebSocket:", error);
       };
     }
 
-    // Função para enviar comandos ao robô
-    function enviarComando(comando) {
-      if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-        webSocket.send(comando);
-        log(`Enviado: ${comando}`);
+    // Função para enviar comandos
+    function sendCommand(command) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(command);
       } else {
-        log('Conexão WebSocket não está aberta');
+        console.log("Conexão WebSocket não está aberta.");
       }
     }
 
-    // Inicializa a conexão WebSocket ao carregar a página
-    window.onload = conectarWebSocket;
+    // Solicita o IP ao usuário ao carregar a página
+    window.onload = () => {
+      const ip = prompt("Insira o endereço IP do ESP32:");
+      if (ip) {
+        connectWebSocket(ip);
+      } else {
+        alert("IP não fornecido. A conexão não será estabelecida.");
+      }
+    };
   </script>
-
 </body>
 </html>
