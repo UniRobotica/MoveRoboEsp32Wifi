@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle do Robô</title>
+</head>
+<body>
+  <h1>Controle do Robô</h1>
+  <p>Movimente seu celular para controlar o robô.</p>
+  <script>
+    let url = "http://<ESP32_IP>/sensor"; // Coloque o IP do seu ESP32
+
+    // Captura dos dados do acelerômetro
+    window.addEventListener("deviceorientation", (event) => {
+      let tiltX = Math.round(event.gamma);
+      let tiltY = Math.round(event.beta);
+
+      // Envia os dados ao ESP32
+      fetch(`${url}?tiltX=${tiltX}&tiltY=${tiltY}`)
+        .then(response => response.text())
+        .then(data => console.log("Dados enviados:", data))
+        .catch(error => console.error("Erro:", error));
+    });
+  </script>
+</body>
+</html>
