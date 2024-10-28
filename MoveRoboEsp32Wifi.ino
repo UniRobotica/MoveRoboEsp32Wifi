@@ -3,7 +3,7 @@
 
 // Configurações de Wi-Fi
 const char* ssid = "Robson";
-const char* password = "Rms12345";
+const char* password = "12345678";
 
 // Configuração do servidor web na porta 80
 WebServer server(80);
