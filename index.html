@@ -23,5 +23,13 @@
         .catch(error => console.error("Erro:", error));
     });
   </script>
+<div id="log"></div>
+<script>
+  function logMessage(message) {
+    document.getElementById("log").innerHTML += message + "<br>";
+  }
+  logMessage("Conectando ao WebSocket...");
+</script>
+
 </body>
 </html>
