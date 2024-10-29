@@ -1,0 +1,21 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 50px;
+}
+.container {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-gap: 10px;
+    justify-content: center;
+}
+button {
+    padding: 15px;
+    font-size: 16px;
+    cursor: pointer;
+}
+#logs {
+    margin-top: 20px;
+    max-width: 300px;
+    margin: auto;
+}

@@ -1,115 +1,61 @@
-#include <Wire.h>
-#include <MPU6050.h>
 #include <WiFi.h>
+#include <WebServer.h>
+#include <SPIFFS.h>
+#include <WebSocketsServer.h>
 
-// Configurações do MPU6050
-MPU6050 mpu;
-int16_t ax, ay, az; // Aceleração
-int16_t gx, gy, gz; // Giroscópio
+const char* ssid = "NOME_DO_WIFI";
+const char* password = "SENHA_DO_WIFI";
+WebServer server(80);
+WebSocketsServer webSocket = WebSocketsServer(81);
 
-// Defina os pinos do TB6612 para os motores
-const int motorRightPWM = 13;  
-const int rightMotorPin1 = 25;
-const int rightMotorPin2 = 33;
+void handleRoot() {
+    File file = SPIFFS.open("/index.html", "r");
+    server.streamFile(file, "text/html");
+    file.close();
+}
 
-const int motorLeftPWM = 32;
-const int leftMotorPin1 = 26;
-const int leftMotorPin2 = 27;
+void handleCSS() {
+    File file = SPIFFS.open("/style.css", "r");
+    server.streamFile(file, "text/css");
+    file.close();
+}
 
-// Variáveis para Wi-Fi
-const char* ssid = "Robson5G"; // Substitua pelo seu SSID
-const char* password = "12345678"; // Substitua pela sua senha
-WiFiServer server(80);
+void handleJS() {
+    File file = SPIFFS.open("/script.js", "r");
+    server.streamFile(file, "application/javascript");
+    file.close();
+}
 
 void setup() {
-  Serial.begin(115200);
-  WiFi.begin(ssid, password);
-  
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
+    Serial.begin(115200);
+    WiFi.begin(ssid, password);
+    if (!SPIFFS.begin(true)) {
+        Serial.println("Erro ao montar SPIFFS");
+        return;
+    }
 
-  Serial.println("WiFi conectado!");
-  Serial.print("IP: ");
-  Serial.println(WiFi.localIP());
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("Conectando ao WiFi...");
+    }
+    Serial.println("Conectado!");
 
-  server.begin();
+    server.on("/", handleRoot);
+    server.on("/style.css", handleCSS);
+    server.on("/script.js", handleJS);
 
-  // Inicialização do MPU6050
-  Wire.begin();
-  mpu.initialize();
-  if (!mpu.testConnection()) {
-    Serial.println("Falha ao conectar ao MPU6050!");
-    while (1);
-  }
+    server.begin();
+    webSocket.begin();
 
-  pinMode(rightMotorPin1, OUTPUT);
-  pinMode(rightMotorPin2, OUTPUT);
-  pinMode(motorRightPWM, OUTPUT);
-  
-  pinMode(leftMotorPin1, OUTPUT);
-  pinMode(leftMotorPin2, OUTPUT);
-  pinMode(motorLeftPWM, OUTPUT);
+    webSocket.onEvent([](uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+        if (type == WStype_TEXT) {
+            Serial.printf("Comando recebido: %s\n", payload);
+            // Adicione o código para controlar o robô com base no comando
+        }
+    });
 }
 
 void loop() {
-  WiFiClient client = server.available(); // Espera por um cliente
-
-  if (client) {
-    String request = client.readStringUntil('\r');
-    Serial.println(request);
-    client.flush();
-
-    // Controle dos motores via requisições HTTP
-    if (request.indexOf("GET /forward") != -1) {
-      moveForward();
-    } else if (request.indexOf("GET /backward") != -1) {
-      moveBackward();
-    } else if (request.indexOf("GET /stop") != -1) {
-      stopMotors();
-    }
-
-    // Resposta HTTP
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/html");
-    client.println("Connection: close");
-    client.println();
-    client.println("<!DOCTYPE HTML>");
-    client.println("<html>");
-    client.println("<h1>Controle do Robô</h1>");
-    client.println("<button onclick=\"fetch('/forward')\">Avançar</button>");
-    client.println("<button onclick=\"fetch('/backward')\">Retroceder</button>");
-    client.println("<button onclick=\"fetch('/stop')\">Parar</button>");
-    client.println("</html>");
-    client.stop();
-  }
-}
-
-// Função para mover o robô para frente
-void moveForward() {
-  digitalWrite(leftMotorPin1, HIGH);
-  digitalWrite(leftMotorPin2, LOW);
-  analogWrite(motorLeftPWM, 255);
-
-  digitalWrite(rightMotorPin1, HIGH);
-  digitalWrite(rightMotorPin2, LOW);
-  analogWrite(motorRightPWM, 255);
-}
-
-// Função para mover o robô para trás
-void moveBackward() {
-  digitalWrite(leftMotorPin1, LOW);
-  digitalWrite(leftMotorPin2, HIGH);
-  analogWrite(motorLeftPWM, 255);
-
-  digitalWrite(rightMotorPin1, LOW);
-  digitalWrite(rightMotorPin2, HIGH);
-  analogWrite(motorRightPWM, 255);
-}
-
-// Função para parar os motores
-void stopMotors() {
-  analogWrite(motorLeftPWM, 0);
-  analogWrite(motorRightPWM, 0);
+    server.handleClient();
+    webSocket.loop();
 }
