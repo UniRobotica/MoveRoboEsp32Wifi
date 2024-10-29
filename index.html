@@ -3,39 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle do Robô</title>
-    <script>
-        let esp32Ip = '';
+    <title>Controle do Robô 2WD</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            justify-content: center;
+        }
+        button {
+            padding: 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #logs {
+            margin-top: 20px;
+            max-width: 300px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Controle do Robô 2WD</h1>
 
-        function setIp() {
-            esp32Ip = document.getElementById('ipInput').value;
-            document.getElementById('connectionLog').innerHTML = `Conectando ao ESP32 em ${esp32Ip}...`;
+    <label for="ip">Digite o IP do ESP32:</label>
+    <input type="text" id="ip" placeholder="Ex: 192.168.4.1">
+    <button onclick="connect()">Conectar</button>
+
+    <div class="container">
+        <button onclick="sendCommand('frente-esquerda')">↖️</button>
+        <button onclick="sendCommand('frente')">⬆️</button>
+        <button onclick="sendCommand('frente-direita')">↗️</button>
+        
+        <button onclick="sendCommand('esquerda')">⬅️</button>
+        <button onclick="sendCommand('parar')">⏹️</button>
+        <button onclick="sendCommand('direita')">➡️</button>
+        
+        <button onclick="sendCommand('tras-esquerda')">↙️</button>
+        <button onclick="sendCommand('tras')">⬇️</button>
+        <button onclick="sendCommand('tras-direita')">↘️</button>
+    </div>
+
+    <div id="logs"></div>
+
+    <script>
+        let socket;
+        
+        function connect() {
+            const ip = document.getElementById("ip").value;
+            if (!ip) {
+                alert("Digite o IP do ESP32.");
+                return;
+            }
+
+            socket = new WebSocket(`ws://${ip}/ws`);
+
+            socket.onopen = () => logMessage("Conectado ao ESP32.");
+            socket.onmessage = (event) => logMessage("Resposta: " + event.data);
+            socket.onclose = () => logMessage("Conexão encerrada.");
+            socket.onerror = (error) => logMessage("Erro de conexão.");
         }
 
         function sendCommand(command) {
-            fetch(`http://${esp32Ip}/${command}`)
-                .then(response => response.text())
-                .then(data => {
-                    console.log(data);
-                    document.getElementById('connectionLog').innerHTML = `Comando "${command}" enviado para ${esp32Ip}`;
-                })
-                .catch(err => {
-                    console.error(err);
-                    document.getElementById('connectionLog').innerHTML = `Erro ao enviar comando: ${err}`;
-                });
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(command);
+                logMessage(`Comando enviado: ${command}`);
+            } else {
+                logMessage("Conexão não estabelecida.");
+            }
+        }
+
+        function logMessage(message) {
+            const logs = document.getElementById("logs");
+            const logEntry = document.createElement("p");
+            logEntry.textContent = message;
+            logs.appendChild(logEntry);
         }
     </script>
-</head>
-<body>
-    <h1>Controle do Robô</h1>
-    <label for="ipInput">IP do ESP32:</label>
-    <input type="text" id="ipInput" placeholder="192.168.1.100">
-    <button onclick="setIp()">Conectar</button>
-    <div id="connectionLog"></div>
-    <div>
-        <button onclick="sendCommand('forward')">Avançar</button>
-        <button onclick="sendCommand('backward')">Retroceder</button>
-        <button onclick="sendCommand('stop')">Parar</button>
-    </div>
 </body>
 </html>

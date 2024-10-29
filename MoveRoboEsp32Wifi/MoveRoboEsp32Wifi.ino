@@ -17,8 +17,8 @@ const int leftMotorPin1 = 26;
 const int leftMotorPin2 = 27;
 
 // Variáveis para Wi-Fi
-const char* ssid = "CLARO_2G2701F5"; // Substitua pelo seu SSID
-const char* password = "752701F5"; // Substitua pela sua senha
+const char* ssid = "Robson5G"; // Substitua pelo seu SSID
+const char* password = "12345678"; // Substitua pela sua senha
 WiFiServer server(80);
 
 void setup() {
