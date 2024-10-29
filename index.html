@@ -1,77 +1,41 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle do Robô</title>
-  <style>
-    button { margin: 10px; padding: 10px; font-size: 18px; }
-    #status { margin-top: 20px; font-size: 18px; }
-    #status.connected { color: green; }
-    #status.disconnected { color: red; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle do Robô</title>
+    <script>
+        let esp32Ip = '';
+
+        function setIp() {
+            esp32Ip = document.getElementById('ipInput').value;
+            document.getElementById('connectionLog').innerHTML = `Conectando ao ESP32 em ${esp32Ip}...`;
+        }
+
+        function sendCommand(command) {
+            fetch(`http://${esp32Ip}/${command}`)
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data);
+                    document.getElementById('connectionLog').innerHTML = `Comando "${command}" enviado para ${esp32Ip}`;
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('connectionLog').innerHTML = `Erro ao enviar comando: ${err}`;
+                });
+        }
+    </script>
 </head>
 <body>
-  <h1>Controle do Robô</h1>
-  <button onclick="sendCommand('forward')">Frente</button>
-  <button onclick="sendCommand('backward')">Trás</button>
-  <button onclick="sendCommand('left')">Esquerda</button>
-  <button onclick="sendCommand('right')">Direita</button>
-  <button onclick="sendCommand('stop')">Parar</button>
-
-  <div id="status" class="disconnected">Status: Desconectado</div>
-
-  <script>
-    let socket;
-    let ip;
-
-    function connectWebSocket() {
-      socket = new WebSocket(`ws://${ip}/`);
-
-      socket.onopen = () => {
-        console.log("Conectado ao WebSocket!");
-        updateStatus("Conectado", true);
-      };
-
-      socket.onclose = () => {
-        console.log("Desconectado do WebSocket.");
-        updateStatus("Desconectado", false);
-        // Tenta reconectar após 3 segundos
-        setTimeout(connectWebSocket, 3000);
-      };
-
-      socket.onerror = (error) => {
-        console.error("Erro no WebSocket:", error);
-        updateStatus("Erro de conexão", false);
-      };
-    }
-
-    // Função para atualizar o status de conexão
-    function updateStatus(statusText, isConnected) {
-      const statusElement = document.getElementById("status");
-      statusElement.textContent = `Status: ${statusText}`;
-      statusElement.className = isConnected ? "connected" : "disconnected";
-    }
-
-    // Função para enviar comandos
-    function sendCommand(command) {
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(command);
-        console.log(`Comando enviado: ${command}`);
-      } else {
-        console.log("Conexão WebSocket não está aberta.");
-      }
-    }
-
-    // Solicita o IP ao usuário ao carregar a página
-    window.onload = () => {
-      ip = prompt("Insira o endereço IP do ESP32:");
-      if (ip) {
-        connectWebSocket();
-      } else {
-        alert("IP não fornecido. A conexão não será estabelecida.");
-      }
-    };
-  </script>
+    <h1>Controle do Robô</h1>
+    <label for="ipInput">IP do ESP32:</label>
+    <input type="text" id="ipInput" placeholder="192.168.1.100">
+    <button onclick="setIp()">Conectar</button>
+    <div id="connectionLog"></div>
+    <div>
+        <button onclick="sendCommand('forward')">Avançar</button>
+        <button onclick="sendCommand('backward')">Retroceder</button>
+        <button onclick="sendCommand('stop')">Parar</button>
+    </div>
 </body>
 </html>
